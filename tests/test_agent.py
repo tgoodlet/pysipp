@@ -118,15 +118,22 @@ def test_server():
     (agent.client(destaddr=('99.99.99.99', 5060)), 1, {}, RuntimeError),
 
     # test if server times out it is signalled
-    (agent.server(), 0, {'timeout': 1}, launch.TimeoutError)],
+    (agent.server(), -9, {'timeout': 1}, launch.TimeoutError)],
     ids=['ua', 'uac', 'uas'],
 )
 def test_failures(ua, retcode, kwargs, exc):
     """Test failure cases for all types of agents
     """
+    runner = launch.TrioRunner()
+
     # run it without raising
-    runner = ua(raise_exc=False, **kwargs)
-    cmds2procs = runner.get(timeout=0)
+    if exc:
+        with pytest.raises(exc):
+            ua(runner=runner, **kwargs)
+
+    # runner = ua(raise_exc=False, **kwargs)
+
+    cmds2procs = runner._procs
     assert not runner.is_alive()
     assert len(list(runner.iterprocs())) == 0
     # tests transparency of the defaults config pipeline
@@ -191,7 +198,6 @@ def test_scenario():
 def test_pass_bad_socket_addr():
     with pytest.raises(ValueError):
         pysipp.client(proxyaddr='10.10.8.88')
-
 
 def test_authentication_arguments():
     client = agent.client(auth_username='username', auth_password='passw0rd')
